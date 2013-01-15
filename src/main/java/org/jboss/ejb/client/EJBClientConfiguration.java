@@ -169,6 +169,8 @@ public interface EJBClientConfiguration {
      */
     interface RemotingConnectionConfiguration extends CommonConnectionCreationConfiguration {
 
+        enum Transport { standard, http }
+
         /**
          * Returns the host name/IP address to be used during connection creation. This method must <b>not</b>
          * return null
@@ -183,6 +185,12 @@ public interface EJBClientConfiguration {
          * @return
          */
         int getPort();
+
+        /**
+         *
+         * @return the transport protocol for the connection
+         */
+        Transport getTransport();
 
     }
 

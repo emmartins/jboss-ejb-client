@@ -291,4 +291,8 @@ public interface Logs extends BasicLogger {
 
     @Message(id = 405, value = "An EJB client context is already registered for EJB client context identifier %s")
     IllegalStateException ejbClientContextAlreadyRegisteredForIdentifier(EJBClientContextIdentifier identifier);
+
+    @LogMessage(level = INFO)
+    @Message(id = 406, value = "Incorrect transport value %s specified for connection named %s. Skipping connection creation")
+    void skippingConnectionCreationDueToInvalidTransport(final String transport, final String connectionName);
 }

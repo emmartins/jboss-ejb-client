@@ -71,7 +71,7 @@ public abstract class EJBReceiver extends Attachable {
         return accessibleModules.remove(new ModuleID(appName, moduleName, distinctName));
     }
 
-    final boolean acceptsModule(String appName, String moduleName, String distinctName) {
+    protected boolean acceptsModule(String appName, String moduleName, String distinctName) {
         return accessibleModules.contains(new ModuleID(appName, moduleName, distinctName));
     }
 

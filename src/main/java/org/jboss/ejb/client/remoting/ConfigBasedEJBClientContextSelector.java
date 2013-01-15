@@ -30,14 +30,19 @@ import org.jboss.ejb.client.EJBReceiver;
 import org.jboss.ejb.client.EJBReceiverContext;
 import org.jboss.ejb.client.IdentityEJBClientContextSelector;
 import org.jboss.ejb.client.Logs;
+import org.jboss.ejb.client.http.HttpOptions;
+import org.jboss.ejb.client.http.HttpRemotingConnectionEJBReceiver;
 import org.jboss.logging.Logger;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
+import org.xnio.OptionMap;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import javax.security.auth.callback.CallbackHandler;
 
 /**
  * An EJB client context selector which uses {@link EJBClientConfiguration} to create {@link org.jboss.ejb.client.remoting.RemotingConnectionEJBReceiver}s.
@@ -122,16 +127,36 @@ public class ConfigBasedEJBClientContextSelector implements IdentityEJBClientCon
             final EJBClientConfiguration.RemotingConnectionConfiguration connectionConfiguration = connectionConfigurations.next();
             final String host = connectionConfiguration.getHost();
             final int port = connectionConfiguration.getPort();
-            final int MAX_RECONNECT_ATTEMPTS = 65535; // TODO: Let's keep this high for now and later allow configuration and a smaller default value
-            // create a re-connect handler (which will be used on connection breaking down)
+            final EJBClientConfiguration.RemotingConnectionConfiguration.Transport transport = connectionConfiguration.getTransport();
+            final int MAX_RECONNECT_ATTEMPTS = 65535;
             final ReconnectHandler reconnectHandler = new EJBClientContextConnectionReconnectHandler(ejbClientContext, endpoint, host, port, connectionConfiguration, MAX_RECONNECT_ATTEMPTS);
             try {
-                // wait for the connection to be established
-                final Connection connection = this.remotingConnectionManager.getConnection(endpoint, host, port, connectionConfiguration);
-                // create a remoting EJB receiver for this connection
-                final EJBReceiver remotingEJBReceiver = new RemotingConnectionEJBReceiver(connection, reconnectHandler, connectionConfiguration.getChannelCreationOptions());
+                final OptionMap connectionCreationOptions = connectionConfiguration.getConnectionCreationOptions();
+                final CallbackHandler callbackHandler = connectionConfiguration.getCallbackHandler();
+                final EJBReceiver ejbReceiver;
+                switch (transport) {
+                    case http:
+                        final String contextPath = connectionCreationOptions.get(HttpOptions.CONTEXT_PATH, HttpOptions.DEFAULT_CONTEXT_PATH);
+                        final Boolean https = connectionCreationOptions.get(HttpOptions.HTTPS);
+                        final String scheme;
+                        if (https != null && https) {
+                            scheme = "https://";
+                        }
+                        else {
+                            scheme = "http://";
+                        }
+                        ejbReceiver = new HttpRemotingConnectionEJBReceiver(scheme+host+":"+port+contextPath+"/",connectionCreationOptions, callbackHandler);
+                        break;
+                    case standard:
+                    default:
+                        // wait for the connection to be established
+                        final Connection connection = this.remotingConnectionManager.getConnection(endpoint, host, port, connectionConfiguration);
+                        // create a remoting EJB receiver for this connection
+                        ejbReceiver = new RemotingConnectionEJBReceiver(connection, reconnectHandler, connectionConfiguration.getChannelCreationOptions());
+                        break;
+                }
                 // associate it with the client context
-                this.ejbClientContext.registerEJBReceiver(remotingEJBReceiver);
+                this.ejbClientContext.registerEJBReceiver(ejbReceiver);
                 // keep track of successful registrations for logging purposes
                 successfulEJBReceiverRegistrations++;
             } catch (Exception e) {

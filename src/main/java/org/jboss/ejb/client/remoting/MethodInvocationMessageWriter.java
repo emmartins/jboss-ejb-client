@@ -36,7 +36,7 @@ import java.lang.reflect.Method;
  * <p/>
  * User: Jaikiran Pai
  */
-class MethodInvocationMessageWriter extends AbstractMessageWriter {
+public class MethodInvocationMessageWriter extends AbstractMessageWriter {
 
     private static final byte METHOD_INVOCATION_HEADER = 0x03;
 
@@ -44,7 +44,7 @@ class MethodInvocationMessageWriter extends AbstractMessageWriter {
 
     private final MarshallerFactory marshallerFactory;
 
-    MethodInvocationMessageWriter(final MarshallerFactory marshallerFactory) {
+    public MethodInvocationMessageWriter(final MarshallerFactory marshallerFactory) {
         this.marshallerFactory = marshallerFactory;
     }
 
@@ -56,7 +56,7 @@ class MethodInvocationMessageWriter extends AbstractMessageWriter {
      * @param invocationContext The EJB client invocation context
      * @throws IOException If there's a problem writing out to the {@link DataOutput}
      */
-    void writeMessage(final DataOutput output, final short invocationId, final EJBClientInvocationContext invocationContext) throws IOException {
+    public void writeMessage(final DataOutput output, final short invocationId, final EJBClientInvocationContext invocationContext) throws IOException {
         if (output == null) {
             throw new IllegalArgumentException("Cannot write to null output");
         }

@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p/>
  * User: Jaikiran Pai
  */
-class ChannelAssociation {
+public class ChannelAssociation {
 
     private static final Logger logger = Logger.getLogger(ChannelAssociation.class);
 
@@ -97,7 +97,7 @@ class ChannelAssociation {
      * @param marshallerFactory  The marshalling factory
      * @param reconnectHandler   The reconnect handler to use for broken connections/channels. Can be null.
      */
-    ChannelAssociation(final RemotingConnectionEJBReceiver ejbReceiver, final EJBReceiverContext ejbReceiverContext,
+    public ChannelAssociation(final RemotingConnectionEJBReceiver ejbReceiver, final EJBReceiverContext ejbReceiverContext,
                        final Channel channel, final byte protocolVersion, final MarshallerFactory marshallerFactory,
                        final ReconnectHandler reconnectHandler) {
         this.ejbReceiver = ejbReceiver;
