@@ -1,5 +1,6 @@
 package org.jboss.ejb.client.http;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -7,12 +8,18 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInput;
-import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.jboss.ejb.client.Affinity;
 import org.jboss.ejb.client.AttachmentKeys;
 import org.jboss.ejb.client.EJBClientInvocationContext;
@@ -63,14 +70,50 @@ public class HttpEJBReceiver extends EJBReceiver {
     @Override
     protected void processInvocation(EJBClientInvocationContext clientInvocationContext,
             EJBReceiverInvocationContext receiverContext) throws Exception {
-        System.out.println("$$$$$$$$ processing invocation!!!!");
 
         final MethodInvocationMessageWriter messageWriter = new MethodInvocationMessageWriter(this.clientProtocolVersion, this.marshallerFactory);
-        URLConnection connection = new URL(getNodeName()).openConnection();
+        /*
+        ByteArrayOutputStream baos = null;
+        DataOutputStream output = null;
+        try {
+            baos = new ByteArrayOutputStream();
+            output = new DataOutputStream(baos);
+            output.writeByte(clientProtocolVersion);
+            output.writeUTF(clientMarshallingStrategy);
+            messageWriter.writeMessage(output, (short)1, clientInvocationContext);
+        } finally {
+             if (output != null)
+                 output.close();
+             if (baos != null)
+                 baos.close();
+        }
+        ByteArrayEntity entity = new ByteArrayEntity(baos.toByteArray());
+
+        DefaultHttpClient client = new DefaultHttpClient();
+        HttpPost request = new HttpPost(getNodeName());
+        request.setEntity(entity);
+        HttpResponse response = client.execute(request);
+        DataInputStream input = null;
+        try {
+            input = new DataInputStream(response.getEntity().getContent());
+            // read the invocation id
+            final short invocationId = input.readShort();
+            // create a ResultProducer which can unmarshall and return the result, later
+            final EJBReceiverInvocationContext.ResultProducer resultProducer = new MethodInvocationResultProducer(clientInvocationContext, input);
+            receiverContext.resultReady(resultProducer);
+            input = null;
+        } finally {
+            if (input != null)
+                input.close();
+       }*/
+       URLConnection connection = new URL(getNodeName()).openConnection();
         connection.setDoOutput(true);
+        connection.setRequestProperty("Content-Type","application/octet-stream");
         DataOutputStream output = null;
         try {
              output = new DataOutputStream(connection.getOutputStream());
+             output.writeByte(clientProtocolVersion);
+             output.writeUTF(clientMarshallingStrategy);
              messageWriter.writeMessage(output, (short)1, clientInvocationContext);
         } finally {
              if (output != null)
@@ -79,11 +122,13 @@ public class HttpEJBReceiver extends EJBReceiver {
         DataInputStream input = null;
         try {
             input = new DataInputStream(connection.getInputStream());
+            final int header = input.read();
             // read the invocation id
             final short invocationId = input.readShort();
             // create a ResultProducer which can unmarshall and return the result, later
             final EJBReceiverInvocationContext.ResultProducer resultProducer = new MethodInvocationResultProducer(clientInvocationContext, input);
             receiverContext.resultReady(resultProducer);
+            input = null;
         } finally {
             if (input != null)
                 input.close();
