@@ -496,6 +496,20 @@ public class PropertiesBasedEJBClientConfiguration implements EJBClientConfigura
             Logs.MAIN.skippingConnectionCreationDueToInvalidPortNumber(portStringVal, connectionName);
             return null;
         }
+        // get "transport" for the connection
+        final String transportStringVal = connectionSpecificProps.get("transport");
+        final RemotingConnectionConfiguration.Transport transport;
+        if (transportStringVal == null || transportStringVal.trim().isEmpty()) {
+            transport = RemotingConnectionConfiguration.Transport.standard;
+        }
+        else {
+            try {
+                transport = RemotingConnectionConfiguration.Transport.valueOf(transportStringVal);
+            } catch (Throwable t) {
+                Logs.MAIN.skippingConnectionCreationDueToInvalidTransport(transportStringVal, connectionName);
+                return null;
+            }
+        }
         // get connect options for the connection
         final String connectOptionsPrefix = this.getConnectionSpecificConnectOptionsPrefix(connectionName);
         final OptionMap connectOptionsFromConfiguration = getOptionMapFromProperties(ejbReceiversConfigurationProperties, connectOptionsPrefix, getClientClassLoader());
@@ -518,7 +532,7 @@ public class PropertiesBasedEJBClientConfiguration implements EJBClientConfigura
         // Channel creation options for this connection
         final String channelOptionsPrefix = this.getConnectionSpecificChannelOptionsPrefix(connectionName);
         final OptionMap channelOptions = getOptionMapFromProperties(ejbReceiversConfigurationProperties, channelOptionsPrefix, getClientClassLoader());
-        return new RemotingConnectionConfigurationImpl(host, port, connectOptions, connectionTimeout, callbackHandler, channelOptions);
+        return new RemotingConnectionConfigurationImpl(host, port, transport, connectOptions, connectionTimeout, callbackHandler, channelOptions);
 
     }
 
@@ -681,15 +695,17 @@ public class PropertiesBasedEJBClientConfiguration implements EJBClientConfigura
     private class RemotingConnectionConfigurationImpl implements RemotingConnectionConfiguration {
         final String host;
         final int port;
+        final Transport transport;
         final OptionMap connectionCreationOptions;
         final long connectionTimeout;
         final CallbackHandler callbackHandler;
         final OptionMap channelCreationOptions;
 
-        RemotingConnectionConfigurationImpl(final String host, final int port, final OptionMap connectionCreationOptions,
+        RemotingConnectionConfigurationImpl(final String host, final int port, final Transport transport, final OptionMap connectionCreationOptions,
                                             final long connectionTimeout, final CallbackHandler callbackHandler, final OptionMap channelCreationOptions) {
             this.host = host;
             this.port = port;
+            this.transport = transport;
             this.connectionCreationOptions = connectionCreationOptions;
             this.connectionTimeout = connectionTimeout;
             this.callbackHandler = callbackHandler;
@@ -704,6 +720,11 @@ public class PropertiesBasedEJBClientConfiguration implements EJBClientConfigura
         @Override
         public int getPort() {
             return this.port;
+        }
+
+        @Override
+        public Transport getTransport() {
+            return transport;
         }
 
         @Override

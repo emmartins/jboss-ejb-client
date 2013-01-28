@@ -30,6 +30,7 @@ import org.jboss.ejb.client.StatefulEJBLocator;
 import org.jboss.ejb.client.remoting.MethodInvocationMessageWriter;
 import org.jboss.ejb.client.remoting.ProtocolV1ClassTable;
 import org.jboss.ejb.client.remoting.ProtocolV1ObjectTable;
+import org.jboss.logging.Logger;
 import org.jboss.marshalling.AbstractClassResolver;
 import org.jboss.marshalling.ByteInput;
 import org.jboss.marshalling.MarshallerFactory;
@@ -37,16 +38,28 @@ import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.Unmarshaller;
 import org.jboss.marshalling.reflect.SunReflectiveCreator;
+import org.xnio.OptionMap;
 
 public class HttpEJBReceiver extends EJBReceiver {
+
+    private static final Logger logger = Logger.getLogger(HttpEJBReceiver.class);
 
  // TODO: The version and the marshalling strategy shouldn't be hardcoded here
     private final byte clientProtocolVersion = 0x01;
     private final String clientMarshallingStrategy = "river";
     private final MarshallerFactory marshallerFactory;
+    private final OptionMap connectionCreationOptions;
 
-    public HttpEJBReceiver(String nodeName) {
-        super(nodeName);
+    public HttpEJBReceiver(final String url, final OptionMap connectionCreationOptions) {
+        super(url);
+        this.connectionCreationOptions = connectionCreationOptions;
+        // parse and register module (TODO fetch from server, or perhaps http receiver should be considered as a special case that handles all beans)
+        final String appName = connectionCreationOptions.get(HttpOptions.APP_NAME);
+        final String moduleName = connectionCreationOptions.get(HttpOptions.MODULE_NAME);
+        final String distinctName = connectionCreationOptions.get(HttpOptions.DISTINCT_NAME);
+        registerModule(appName, moduleName, distinctName);
+        // TODO parse and setup http client
+        // TODO add https support
         this.marshallerFactory = Marshalling.getProvidedMarshallerFactory(this.clientMarshallingStrategy);
         if (this.marshallerFactory == null) {
             throw new RuntimeException("Could not find a marshaller factory for " + this.clientMarshallingStrategy + " marshalling strategy");
@@ -59,18 +72,10 @@ public class HttpEJBReceiver extends EJBReceiver {
 
     }
 
-    public boolean registerModule2(String appName, String moduleName, String distinctName) {
-        return registerModule(appName, moduleName, distinctName);
-    }
-
-    public boolean deregisterModule2(String appName, String moduleName, String distinctName) {
-        return deregisterModule(appName, moduleName, distinctName);
-    }
-
     @Override
     protected void processInvocation(EJBClientInvocationContext clientInvocationContext,
             EJBReceiverInvocationContext receiverContext) throws Exception {
-
+        logger.warn("HttpEJBReceiver:processInvocation()");
         final MethodInvocationMessageWriter messageWriter = new MethodInvocationMessageWriter(this.clientProtocolVersion, this.marshallerFactory);
         /*
         ByteArrayOutputStream baos = null;
