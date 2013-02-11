@@ -54,7 +54,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class RemotingConnectionEJBReceiver extends EJBReceiver {
+public class RemotingConnectionEJBReceiver extends EJBReceiver {
 
     private static final Logger logger = Logger.getLogger(RemotingConnectionEJBReceiver.class);
 
@@ -65,8 +65,8 @@ public final class RemotingConnectionEJBReceiver extends EJBReceiver {
     private final Map<EJBReceiverContext, ChannelAssociation> channelAssociations = new IdentityHashMap<EJBReceiverContext, ChannelAssociation>();
 
     // TODO: The version and the marshalling strategy shouldn't be hardcoded here
-    private final byte clientProtocolVersion = 0x01;
-    private final String clientMarshallingStrategy = "river";
+    protected final byte clientProtocolVersion = 0x01;
+    protected final String clientMarshallingStrategy = "river";
 
     /**
      * A latch which will be used to wait for the initial module availability report from the server
@@ -76,7 +76,7 @@ public final class RemotingConnectionEJBReceiver extends EJBReceiver {
 
     private final String cachedToString;
 
-    private final MarshallerFactory marshallerFactory;
+    protected final MarshallerFactory marshallerFactory;
 
     private final ReconnectHandler reconnectHandler;
     private final OptionMap channelCreationOptions;
@@ -514,7 +514,7 @@ public final class RemotingConnectionEJBReceiver extends EJBReceiver {
         }
     }
 
-    private ChannelAssociation requireChannelAssociation(final EJBReceiverContext ejbReceiverContext) {
+    protected ChannelAssociation requireChannelAssociation(final EJBReceiverContext ejbReceiverContext) {
         ChannelAssociation channelAssociation;
         synchronized (this.channelAssociations) {
             channelAssociation = this.channelAssociations.get(ejbReceiverContext);

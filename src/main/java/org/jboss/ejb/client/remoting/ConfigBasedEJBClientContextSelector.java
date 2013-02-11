@@ -28,8 +28,8 @@ import org.jboss.ejb.client.EJBClientContextIdentifier;
 import org.jboss.ejb.client.EJBReceiver;
 import org.jboss.ejb.client.IdentityEJBClientContextSelector;
 import org.jboss.ejb.client.Logs;
-import org.jboss.ejb.client.http.HttpEJBReceiver;
 import org.jboss.ejb.client.http.HttpOptions;
+import org.jboss.ejb.client.http.HttpRemotingConnectionEJBReceiver;
 import org.jboss.logging.Logger;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
@@ -142,7 +142,7 @@ public class ConfigBasedEJBClientContextSelector implements IdentityEJBClientCon
                 switch (transport) {
                     case http:
                         final String servletName = connectionCreationOptions.get(HttpOptions.SERVLET_NAME, HttpOptions.DEFAULT_SERVLET_NAME);
-                        ejbReceiver = new HttpEJBReceiver("http://"+host+":"+port+"/"+servletName+"/",connectionCreationOptions);
+                        ejbReceiver = new HttpRemotingConnectionEJBReceiver("http://"+host+":"+port+"/"+servletName+"/",connectionCreationOptions);
                         break;
                     case standard:
                     default:

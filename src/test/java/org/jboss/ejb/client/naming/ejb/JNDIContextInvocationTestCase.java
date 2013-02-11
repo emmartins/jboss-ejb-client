@@ -26,7 +26,6 @@ import junit.framework.Assert;
 import org.jboss.ejb.client.ContextSelector;
 import org.jboss.ejb.client.EJBClientContext;
 import org.jboss.ejb.client.EJBReceiver;
-import org.jboss.ejb.client.http.HttpEJBReceiver;
 import org.jboss.ejb.client.remoting.ConfigBasedEJBClientContextSelector;
 import org.jboss.ejb.client.remoting.RemotingConnectionEJBReceiver;
 import org.jboss.ejb.client.test.common.AnonymousCallbackHandler;

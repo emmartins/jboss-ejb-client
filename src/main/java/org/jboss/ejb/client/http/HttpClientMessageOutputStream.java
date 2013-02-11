@@ -21,43 +21,53 @@
  */
 package org.jboss.ejb.client.http;
 
-import org.xnio.Option;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.jboss.remoting3.MessageOutputStream;
 
 /**
  *
  * @author Eduardo Martins
  *
  */
-public final class HttpOptions {
+public class HttpClientMessageOutputStream extends MessageOutputStream {
 
-    private HttpOptions() {
+    private final OutputStream out;
+    private final HttpClientChannel channel;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    public HttpClientMessageOutputStream(final OutputStream outputStream, final HttpClientChannel channel) {
+        this.out = outputStream;
+        this.channel = channel;
     }
 
-    public static enum HTTP_CLIENT_TYPE {
-        jdk, apache, apacheasync
+    @Override
+    public void flush() throws IOException {
+        out.flush();
     }
 
-    /**
-     *
-     */
-    public static final Option<Boolean> HTTPS = Option.simple(HttpOptions.class, "HTTPS", Boolean.class);
+    @Override
+    public void close() throws IOException {
+        if(closed.compareAndSet(false, true)) {
+            out.close();
+            channel.outputStreamClosed();
+        }
+    }
 
-    /**
-     *
-     */
-    public static final Option<String> SERVLET_NAME = Option.simple(HttpOptions.class, "SERVLET_NAME", String.class);
-    public static final String DEFAULT_SERVLET_NAME = "ejb3-remote";
+    @Override
+    public MessageOutputStream cancel() {
+        try {
+            out.close();
+        } catch (IOException e) {
+            // ignore
+        }
+        return this;
+    }
 
-    /**
-     *
-     */
-    public static final Option<HTTP_CLIENT_TYPE> HTTP_CLIENT = Option.simple(HttpOptions.class, "HTTP_CLIENT", HTTP_CLIENT_TYPE.class);
-
-    /**
-     * FIXME temp way to have ejb id into the http ejb receiver
-     */
-    public static final Option<String> APP_NAME = Option.simple(HttpOptions.class, "APP_NAME", String.class);
-    public static final Option<String> MODULE_NAME = Option.simple(HttpOptions.class, "MODULE_NAME", String.class);
-    public static final Option<String> DISTINCT_NAME = Option.simple(HttpOptions.class, "DISTINCT_NAME", String.class);
-
+    @Override
+    public void write(int b) throws IOException {
+        out.write(b);
+    }
 }
