@@ -42,11 +42,6 @@ public class HttpRemotingConnectionEJBReceiver extends RemotingConnectionEJBRece
 
     public HttpRemotingConnectionEJBReceiver(final String url, final OptionMap connectionCreationOptions) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         super(new HttpClientConnection(url), null, connectionCreationOptions);
-        // parse and register module (TODO fetch from server, or perhaps http receiver should be considered as a special case that handles all beans)
-        final String appName = connectionCreationOptions.get(HttpOptions.APP_NAME);
-        final String moduleName = connectionCreationOptions.get(HttpOptions.MODULE_NAME);
-        final String distinctName = connectionCreationOptions.get(HttpOptions.DISTINCT_NAME);
-        registerModule(appName, moduleName, distinctName);
         // parse and setup http client
         final String httpClientFactoryClassName = connectionCreationOptions.get(HttpOptions.HTTP_CLIENT_FACTORY_CLASS_NAME);
         if (httpClientFactoryClassName == null) {
@@ -55,6 +50,12 @@ public class HttpRemotingConnectionEJBReceiver extends RemotingConnectionEJBRece
             Class<?> httpClientFactoryClass = Class.forName(httpClientFactoryClassName);
             clientFactory = (HttpClientFactory) httpClientFactoryClass.newInstance();
         }
+    }
+
+    @Override
+    protected boolean acceptsModule(String appName, String moduleName, String distinctName) {
+        // accepts all modules
+        return true;
     }
 
     @Override

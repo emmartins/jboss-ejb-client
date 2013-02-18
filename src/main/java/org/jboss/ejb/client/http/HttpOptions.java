@@ -49,11 +49,4 @@ public final class HttpOptions {
      */
     public static final Option<String> HTTP_CLIENT_FACTORY_CLASS_NAME = Option.simple(HttpOptions.class, "HTTP_CLIENT_FACTORY_CLASS_NAME", String.class);
 
-    /**
-     * FIXME temp way to have ejb id into the http ejb receiver
-     */
-    public static final Option<String> APP_NAME = Option.simple(HttpOptions.class, "APP_NAME", String.class);
-    public static final Option<String> MODULE_NAME = Option.simple(HttpOptions.class, "MODULE_NAME", String.class);
-    public static final Option<String> DISTINCT_NAME = Option.simple(HttpOptions.class, "DISTINCT_NAME", String.class);
-
 }
