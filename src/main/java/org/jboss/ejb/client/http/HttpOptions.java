@@ -33,10 +33,6 @@ public final class HttpOptions {
     private HttpOptions() {
     }
 
-    public static enum HTTP_CLIENT_TYPE {
-        jdk, apache, apacheasync
-    }
-
     /**
      *
      */
@@ -51,7 +47,7 @@ public final class HttpOptions {
     /**
      *
      */
-    public static final Option<HTTP_CLIENT_TYPE> HTTP_CLIENT = Option.simple(HttpOptions.class, "HTTP_CLIENT", HTTP_CLIENT_TYPE.class);
+    public static final Option<String> HTTP_CLIENT_FACTORY_CLASS_NAME = Option.simple(HttpOptions.class, "HTTP_CLIENT_FACTORY_CLASS_NAME", String.class);
 
     /**
      * FIXME temp way to have ejb id into the http ejb receiver

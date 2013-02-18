@@ -24,7 +24,6 @@ package org.jboss.ejb.client.http;
 import org.jboss.ejb.client.EJBReceiverContext;
 import org.jboss.ejb.client.NodeAffinity;
 import org.jboss.ejb.client.StatefulEJBLocator;
-import org.jboss.ejb.client.http.apache.ApacheHttpClientFactory;
 import org.jboss.ejb.client.http.jdk.JDKHttpClientFactory;
 import org.jboss.ejb.client.remoting.ChannelAssociation;
 import org.jboss.ejb.client.remoting.RemotingConnectionEJBReceiver;
@@ -41,7 +40,7 @@ public class HttpRemotingConnectionEJBReceiver extends RemotingConnectionEJBRece
 
     private String cookie;
 
-    public HttpRemotingConnectionEJBReceiver(final String url, final OptionMap connectionCreationOptions) {
+    public HttpRemotingConnectionEJBReceiver(final String url, final OptionMap connectionCreationOptions) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         super(new HttpClientConnection(url), null, connectionCreationOptions);
         // parse and register module (TODO fetch from server, or perhaps http receiver should be considered as a special case that handles all beans)
         final String appName = connectionCreationOptions.get(HttpOptions.APP_NAME);
@@ -49,16 +48,13 @@ public class HttpRemotingConnectionEJBReceiver extends RemotingConnectionEJBRece
         final String distinctName = connectionCreationOptions.get(HttpOptions.DISTINCT_NAME);
         registerModule(appName, moduleName, distinctName);
         // parse and setup http client
-        switch (connectionCreationOptions.get(HttpOptions.HTTP_CLIENT)) {
-            case apache:
-                clientFactory = new ApacheHttpClientFactory();
-                break;
-            case jdk:
-            default:
-                clientFactory = new JDKHttpClientFactory();
-                break;
+        final String httpClientFactoryClassName = connectionCreationOptions.get(HttpOptions.HTTP_CLIENT_FACTORY_CLASS_NAME);
+        if (httpClientFactoryClassName == null) {
+            clientFactory = new JDKHttpClientFactory();
+        } else {
+            Class<?> httpClientFactoryClass = Class.forName(httpClientFactoryClassName);
+            clientFactory = (HttpClientFactory) httpClientFactoryClass.newInstance();
         }
-        // TODO add https support
     }
 
     @Override
@@ -102,4 +98,5 @@ public class HttpRemotingConnectionEJBReceiver extends RemotingConnectionEJBRece
     public void setCookie(String cookie) {
         this.cookie = cookie;
     }
+
 }

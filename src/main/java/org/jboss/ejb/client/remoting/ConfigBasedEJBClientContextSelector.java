@@ -142,7 +142,15 @@ public class ConfigBasedEJBClientContextSelector implements IdentityEJBClientCon
                 switch (transport) {
                     case http:
                         final String servletName = connectionCreationOptions.get(HttpOptions.SERVLET_NAME, HttpOptions.DEFAULT_SERVLET_NAME);
-                        ejbReceiver = new HttpRemotingConnectionEJBReceiver("http://"+host+":"+port+"/"+servletName+"/",connectionCreationOptions);
+                        final Boolean https = connectionCreationOptions.get(HttpOptions.HTTPS);
+                        final String scheme;
+                        if (https != null && https) {
+                            scheme = "https://";
+                        }
+                        else {
+                            scheme = "http://";
+                        }
+                        ejbReceiver = new HttpRemotingConnectionEJBReceiver(scheme+host+":"+port+"/"+servletName+"/",connectionCreationOptions);
                         break;
                     case standard:
                     default:
