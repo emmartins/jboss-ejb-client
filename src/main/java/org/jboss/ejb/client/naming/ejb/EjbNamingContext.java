@@ -105,15 +105,12 @@ class EjbNamingContext implements Context {
             } else {
                 // create the EJB client context based on the JNDI environment properties
                 final EJBClientContext ejbClientContext = this.createIdentifiableEjbClientContext(this.environment);
-                log.info("$$$$$$ ejb client ccontext : "+ejbClientContext);
-
                 final String ejbClientContextName = SCOPED_EJB_CLIENT_CONTEXT_NAME_PREFIX + nextEJBClientContextNumber.addAndGet(1);
                 this.ejbClientContextIdentifier = new NamedEJBClientContextIdentifier(ejbClientContextName);
                 // register it with the identity based EJB client context selector
                 ((IdentityEJBClientContextSelector) currentSelector).registerContext(this.ejbClientContextIdentifier, ejbClientContext);
             }
         }
-        log.info("$$$$$$ ejb client ccontext id: "+ejbClientContextIdentifier);
     }
 
     @Override
@@ -129,9 +126,7 @@ class EjbNamingContext implements Context {
             // created for this JNDI naming context
             if (EjbJndiNameParser.isEJBClientContextJNDIName(name)) {
                 try {
-                    Object o = EJBClientContext.require(this.ejbClientContextIdentifier);
-                    log.info("$$$$$$ ejb client context lookup: "+o);
-                    return o;
+                    return EJBClientContext.require(this.ejbClientContextIdentifier);
                 } catch (IllegalStateException ise) {
                     throw new NameNotFoundException(name + " not found within EJB naming context " + this);
                 }
