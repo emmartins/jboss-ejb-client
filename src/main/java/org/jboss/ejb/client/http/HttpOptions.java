@@ -41,8 +41,8 @@ public final class HttpOptions {
     /**
      *
      */
-    public static final Option<String> SERVLET_NAME = Option.simple(HttpOptions.class, "SERVLET_NAME", String.class);
-    public static final String DEFAULT_SERVLET_NAME = "ejb3-remote";
+    public static final Option<String> CONTEXT_PATH = Option.simple(HttpOptions.class, "CONTEXT_PATH", String.class);
+    public static final String DEFAULT_CONTEXT_PATH = "ejb3-remote";
 
     /**
      *

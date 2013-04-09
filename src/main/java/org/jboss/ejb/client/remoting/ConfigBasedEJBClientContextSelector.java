@@ -141,7 +141,7 @@ public class ConfigBasedEJBClientContextSelector implements IdentityEJBClientCon
                 final EJBReceiver ejbReceiver;
                 switch (transport) {
                     case http:
-                        final String servletName = connectionCreationOptions.get(HttpOptions.SERVLET_NAME, HttpOptions.DEFAULT_SERVLET_NAME);
+                        final String contextPath = connectionCreationOptions.get(HttpOptions.CONTEXT_PATH, HttpOptions.DEFAULT_CONTEXT_PATH);
                         final Boolean https = connectionCreationOptions.get(HttpOptions.HTTPS);
                         final String scheme;
                         if (https != null && https) {
@@ -150,7 +150,7 @@ public class ConfigBasedEJBClientContextSelector implements IdentityEJBClientCon
                         else {
                             scheme = "http://";
                         }
-                        ejbReceiver = new HttpRemotingConnectionEJBReceiver(scheme+host+":"+port+"/"+servletName+"/",connectionCreationOptions);
+                        ejbReceiver = new HttpRemotingConnectionEJBReceiver(scheme+host+":"+port+contextPath+"/",connectionCreationOptions);
                         break;
                     case standard:
                     default:
