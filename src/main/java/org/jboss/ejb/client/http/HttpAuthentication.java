@@ -19,24 +19,36 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.ejb.client.http.jdk;
+package org.jboss.ejb.client.http;
 
 import java.io.IOException;
 
-import org.jboss.ejb.client.http.HttpClient;
-import org.jboss.ejb.client.http.HttpRemotingConnectionEJBReceiver;
-import org.jboss.ejb.client.http.HttpRequest;
+import javax.security.auth.callback.CallbackHandler;
 
 /**
  *
  * @author Eduardo Martins
  *
  */
-public class JDKHttpClient implements HttpClient {
+public interface HttpAuthentication {
 
-    @Override
-    public HttpRequest getRequest(HttpRemotingConnectionEJBReceiver receiver) throws IOException {
-        return new JDKHttpRequest(receiver);
-    }
+    /**
+     * Retrieves the HTTP Authorization header value to be used by a client during authentication.
+     *
+     * @param callbackHandler handler which will be used to retrieve the username and password.
+     * @return
+     * @throws IOException
+     */
+    String getAuthorization(CallbackHandler callbackHandler) throws IOException;
+
+    /**
+     * Retrieves the HTTP Authorization header value to be used by a client during authentication.
+     *
+     * @param userName the user's name
+     * @param password the user's password
+     * @return
+     * @throws IOException
+     */
+    String getAuthorization(String userName, char[] password) throws IOException;
 
 }

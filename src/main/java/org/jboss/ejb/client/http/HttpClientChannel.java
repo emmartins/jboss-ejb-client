@@ -84,11 +84,11 @@ public class HttpClientChannel implements Channel {
 
     @Override
     public MessageOutputStream writeMessage() throws IOException {
-        request = receiver.getClient().getRequest(receiver.getURL(), receiver.getCookie());
+        request = receiver.getClient().getRequest(receiver);
         DataOutputStream output = new DataOutputStream(request.getOutputStream());
         output.writeByte(receiver.getClientProtocolVersion());
         output.writeUTF(receiver.getClientMarshallingStrategy());
-        return new HttpClientMessageOutputStream(output,this);
+        return new HttpClientMessageOutputStream(output, this);
     }
 
     @Override
@@ -130,9 +130,8 @@ public class HttpClientChannel implements Channel {
         // send request
         HttpResponse response = request.send();
         // update cookie
-        final String cookie = response.getCookie();
-        if (cookie != null) {
-            receiver.setCookie(cookie);
+        if (receiver.getCookie() == null) {
+            receiver.setCookie(response.getCookie());
         }
         // handle response
         handler.handleMessage(this, new HttpClientMessageInputStream(response.getInputStream()));

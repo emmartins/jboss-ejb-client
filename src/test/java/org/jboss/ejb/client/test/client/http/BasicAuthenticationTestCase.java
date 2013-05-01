@@ -19,24 +19,25 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.ejb.client.http.jdk;
 
-import java.io.IOException;
+package org.jboss.ejb.client.test.client.http;
 
-import org.jboss.ejb.client.http.HttpClient;
-import org.jboss.ejb.client.http.HttpRemotingConnectionEJBReceiver;
-import org.jboss.ejb.client.http.HttpRequest;
+import org.jboss.ejb.client.http.BasicHttpAuthentication;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
+ * Tests basic authentication computation.
  *
  * @author Eduardo Martins
- *
  */
-public class JDKHttpClient implements HttpClient {
+public class BasicAuthenticationTestCase {
 
-    @Override
-    public HttpRequest getRequest(HttpRemotingConnectionEJBReceiver receiver) throws IOException {
-        return new JDKHttpRequest(receiver);
+    @Test
+    public void testRFC2617DigestExample() throws Exception {
+        String computedAuthentication = new BasicHttpAuthentication().getAuthorization("Aladdin", "open sesame".toCharArray());
+        String expectedAuthenticaton = "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==";
+        Assert.assertEquals(computedAuthentication, expectedAuthenticaton);
     }
 
 }

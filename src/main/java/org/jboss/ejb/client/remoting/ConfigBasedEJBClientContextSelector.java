@@ -150,7 +150,7 @@ public class ConfigBasedEJBClientContextSelector implements IdentityEJBClientCon
                         else {
                             scheme = "http://";
                         }
-                        ejbReceiver = new HttpRemotingConnectionEJBReceiver(scheme+host+":"+port+contextPath+"/",connectionCreationOptions);
+                        ejbReceiver = new HttpRemotingConnectionEJBReceiver(scheme+host+":"+port+contextPath+"/",connectionCreationOptions, callbackHandler);
                         break;
                     case standard:
                     default:

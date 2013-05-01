@@ -21,6 +21,8 @@
  */
 package org.jboss.ejb.client.http;
 
+import javax.security.auth.callback.CallbackHandler;
+
 import org.jboss.ejb.client.EJBReceiverContext;
 import org.jboss.ejb.client.NodeAffinity;
 import org.jboss.ejb.client.StatefulEJBLocator;
@@ -37,10 +39,12 @@ import org.xnio.OptionMap;
 public class HttpRemotingConnectionEJBReceiver extends RemotingConnectionEJBReceiver {
 
     private final HttpClientFactory clientFactory;
-
+    private final CallbackHandler callbackHandler;
     private String cookie;
+    private final boolean preemptiveBasicAuthentication;
 
-    public HttpRemotingConnectionEJBReceiver(final String url, final OptionMap connectionCreationOptions) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public HttpRemotingConnectionEJBReceiver(final String url, final OptionMap connectionCreationOptions,
+            CallbackHandler callbackHandler) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         super(new HttpClientConnection(url), null, connectionCreationOptions);
         // parse and setup http client
         final String httpClientFactoryClassName = connectionCreationOptions.get(HttpOptions.HTTP_CLIENT_FACTORY_CLASS_NAME);
@@ -50,6 +54,8 @@ public class HttpRemotingConnectionEJBReceiver extends RemotingConnectionEJBRece
             Class<?> httpClientFactoryClass = Class.forName(httpClientFactoryClassName);
             clientFactory = (HttpClientFactory) httpClientFactoryClass.newInstance();
         }
+        this.callbackHandler = callbackHandler;
+        this.preemptiveBasicAuthentication = connectionCreationOptions.get(HttpOptions.PREEMPTIVE_BASIC_AUTH,false);
     }
 
     @Override
@@ -65,30 +71,37 @@ public class HttpRemotingConnectionEJBReceiver extends RemotingConnectionEJBRece
 
     @Override
     protected ChannelAssociation requireChannelAssociation(EJBReceiverContext ejbReceiverContext) {
-       return new ChannelAssociation(this, ejbReceiverContext, new HttpClientChannel(this), this.clientProtocolVersion, this.marshallerFactory, null);
+        return new ChannelAssociation(this, ejbReceiverContext, new HttpClientChannel(this), this.clientProtocolVersion,
+                this.marshallerFactory, null);
     }
 
     @Override
     protected <T> StatefulEJBLocator<T> openSession(EJBReceiverContext receiverContext, Class<T> viewType, String appName,
             String moduleName, String distinctName, String beanName) throws IllegalArgumentException {
-        StatefulEJBLocator<T> locator = super.openSession(receiverContext, viewType, appName, moduleName, distinctName, beanName);
+        StatefulEJBLocator<T> locator = super.openSession(receiverContext, viewType, appName, moduleName, distinctName,
+                beanName);
         // overwrite affinity, since server will send different node name
-        return new StatefulEJBLocator<T>(viewType, appName, moduleName, beanName, distinctName, locator.getSessionId(), new NodeAffinity(getNodeName()), getNodeName());
+        return new StatefulEJBLocator<T>(viewType, appName, moduleName, beanName, distinctName, locator.getSessionId(),
+                new NodeAffinity(getNodeName()), getNodeName());
     }
 
     HttpClient getClient() {
         return clientFactory.getClient();
     }
 
-    String getURL() {
+    public CallbackHandler getCallbackHandler() {
+        return callbackHandler;
+    }
+
+    public String getURL() {
         return getNodeName();
     }
 
-    String getClientMarshallingStrategy() {
+    public String getClientMarshallingStrategy() {
         return super.clientMarshallingStrategy;
     }
 
-    byte getClientProtocolVersion() {
+    public byte getClientProtocolVersion() {
         return super.clientProtocolVersion;
     }
 
@@ -98,6 +111,10 @@ public class HttpRemotingConnectionEJBReceiver extends RemotingConnectionEJBRece
 
     public void setCookie(String cookie) {
         this.cookie = cookie;
+    }
+
+    public boolean isPreemptiveBasicAuthentication() {
+        return preemptiveBasicAuthentication;
     }
 
 }

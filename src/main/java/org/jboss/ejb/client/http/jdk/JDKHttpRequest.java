@@ -21,11 +21,19 @@
  */
 package org.jboss.ejb.client.http.jdk;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
+import java.util.List;
+import java.util.UUID;
 
+import org.jboss.ejb.client.DefaultCallbackHandler;
+import org.jboss.ejb.client.http.BasicHttpAuthentication;
+import org.jboss.ejb.client.http.DigestHttpAuthentication;
+import org.jboss.ejb.client.http.HttpAuthentication;
+import org.jboss.ejb.client.http.HttpRemotingConnectionEJBReceiver;
 import org.jboss.ejb.client.http.HttpRequest;
 import org.jboss.ejb.client.http.HttpResponse;
 
@@ -36,27 +44,92 @@ import org.jboss.ejb.client.http.HttpResponse;
  */
 public class JDKHttpRequest implements HttpRequest {
 
-    private final URLConnection connection;
+    private static final String AUTHORIZATION_HEADER_NAME = "Authorization";
+    private static final String WWW_AUTHENTICATE_HEADER_NAME = "WWW-Authenticate";
+    private static final String CONTENT_TYPE_HEADER_NAME = "Content-Type";
+    private static final String CONTENT_TYPE_HEADER_VALUE = "application/octet-stream";
+    private static final String COOKIE_HEADER_NAME = "Cookie";
 
-    public JDKHttpRequest(String url, String cookie) throws IOException {
-        if(url == null) {
-            throw new NullPointerException("null url");
+    private final HttpRemotingConnectionEJBReceiver receiver;
+    private HttpURLConnection connection;
+    private final ByteArrayOutputStream cache;
+
+    public JDKHttpRequest(HttpRemotingConnectionEJBReceiver receiver) throws IOException {
+        if (receiver == null) {
+            throw new NullPointerException("null receiver");
         }
-        connection = new URL(url).openConnection();
+        this.receiver = receiver;
+        connection = (HttpURLConnection) new URL(receiver.getURL()).openConnection();
         connection.setDoOutput(true);
-        connection.setRequestProperty("Content-Type","application/octet-stream");
+        connection.setRequestProperty(CONTENT_TYPE_HEADER_NAME, CONTENT_TYPE_HEADER_VALUE);
+        final String cookie = receiver.getCookie();
         if (cookie != null) {
-            connection.setRequestProperty("Cookie", cookie);
+            // session established
+            connection.setRequestProperty(COOKIE_HEADER_NAME, cookie);
+        }
+        if (receiver.getCallbackHandler() instanceof DefaultCallbackHandler) {
+            // no authentication means available
+            cache = null;
+        } else {
+            if (receiver.isPreemptiveBasicAuthentication()) {
+                // send authorization right away and save traffic of handling server auth required response (at the expense of sending always the authorization)
+                connection.setRequestProperty(AUTHORIZATION_HEADER_NAME, new BasicHttpAuthentication().getAuthorization(receiver.getCallbackHandler()));
+                cache = null;
+            } else {
+                // no preemptive authorization, wait for server response to decide which auth to do, need to cache request content data in a byte array stream for possible request replay
+                cache = new ByteArrayOutputStream();
+            }
         }
     }
 
     @Override
     public OutputStream getOutputStream() throws IOException {
-        return connection.getOutputStream();
+        return cache != null ? cache : connection.getOutputStream();
     }
 
     @Override
-    public HttpResponse send() {
+    public HttpResponse send() throws IOException {
+        final byte[] bytes;
+        if (cache != null) {
+            bytes = cache.toByteArray();
+            final OutputStream out = connection.getOutputStream();
+            out.write(bytes);
+            out.close();
+        } else {
+            bytes = null;
+        }
+        if (connection.getResponseCode() == HttpURLConnection.HTTP_UNAUTHORIZED && bytes != null) {
+            // handle authentication
+            final List<String> wwwAuthenticateHeaderStrings = connection.getHeaderFields().get(WWW_AUTHENTICATE_HEADER_NAME);
+            if (wwwAuthenticateHeaderStrings == null) {
+                throw new IOException("received 401 error response but no www authenticate headers");
+            }
+            HttpAuthentication authentication = null;
+            for (String wwwAuthenticateHeaderString : wwwAuthenticateHeaderStrings) {
+                WWWAuthenticateHeader header = WWWAuthenticateHeader.parse(wwwAuthenticateHeaderString);
+                if (header.getType() == WWWAuthenticateHeader.Type.basic) {
+                    authentication = new BasicHttpAuthentication();
+                } else if (header.getType() == WWWAuthenticateHeader.Type.digest) {
+                    authentication = new DigestHttpAuthentication(connection.getURL().getFile(), connection.getRequestMethod(),
+                            header.getParams().get("realm"), header.getParams().get("nonce"), header.getParams().get("opaque"),
+                            header.getParams().get("qop"), UUID.randomUUID().toString());
+                    // no need to process others, digest is at top priority
+                    break;
+                }
+            }
+            if (authentication == null) {
+                throw new IOException("no supported authentication methods found in server response");
+            }
+            final String authorization = authentication.getAuthorization(receiver.getCallbackHandler());
+            // resend request
+            connection = (HttpURLConnection) connection.getURL().openConnection();
+            connection.setDoOutput(true);
+            connection.setRequestProperty(CONTENT_TYPE_HEADER_NAME, CONTENT_TYPE_HEADER_VALUE);
+            connection.setRequestProperty(AUTHORIZATION_HEADER_NAME, authorization);
+            final OutputStream out = connection.getOutputStream();
+            out.write(bytes);
+            out.close();
+        }
         return new JDKHttpResponse(connection);
     }
 

@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.util.List;
-import java.util.Map;
 
 import org.jboss.ejb.client.http.HttpResponse;
 
@@ -36,6 +35,8 @@ import org.jboss.ejb.client.http.HttpResponse;
  */
 public class JDKHttpResponse implements HttpResponse {
 
+    private static final String SET_COOKIE_HEADER_NAME = "Set-Cookie";
+
     private final URLConnection connection;
 
     public JDKHttpResponse(URLConnection connection) {
@@ -45,8 +46,7 @@ public class JDKHttpResponse implements HttpResponse {
     @Override
     public String getCookie() {
         String cookieValue = null;
-        Map<String, List<String>> headers = connection.getHeaderFields();
-        List<String> values = headers.get("Set-Cookie");
+        List<String> values = connection.getHeaderFields().get(SET_COOKIE_HEADER_NAME);
         if (values != null) {
             for (String value : values) {
                 if (cookieValue == null)

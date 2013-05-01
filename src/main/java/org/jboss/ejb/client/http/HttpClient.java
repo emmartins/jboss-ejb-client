@@ -30,6 +30,6 @@ import java.io.IOException;
  */
 public interface HttpClient {
 
-    HttpRequest getRequest(String url, String cookie) throws IOException;
+    HttpRequest getRequest(HttpRemotingConnectionEJBReceiver receiver) throws IOException;
 
 }

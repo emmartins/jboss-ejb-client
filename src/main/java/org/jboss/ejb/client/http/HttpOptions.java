@@ -41,6 +41,11 @@ public final class HttpOptions {
     /**
      *
      */
+    public static final Option<Boolean> PREEMPTIVE_BASIC_AUTH = Option.simple(HttpOptions.class, "PREEMPTIVE_BASIC_AUTH", Boolean.class);
+
+    /**
+     *
+     */
     public static final Option<String> CONTEXT_PATH = Option.simple(HttpOptions.class, "CONTEXT_PATH", String.class);
     public static final String DEFAULT_CONTEXT_PATH = "ejb3-remote";
 
